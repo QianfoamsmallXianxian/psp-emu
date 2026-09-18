@@ -433,7 +433,7 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 		refreshCustomShaders();
 	});
 	Choice *customShaderBrowse = customShaderRow->Add(new Choice(gr->T("Browse"), new LinearLayoutParams(0.0f)));
-	customShaderBrowse->OnClick.Add([refreshCustomShaders](UI::EventParams &e) {
+	customShaderBrowse->OnClick.Add([refreshCustomShaders, gr](UI::EventParams &e) {
 		System_BrowseForFolder(GetRequesterToken(), gr->T("Custom filter folder"), Path(g_Config.sCustomShaderPath), [refreshCustomShaders](std::string_view value, int) {
 			g_Config.sCustomShaderPath = std::string(value);
 			refreshCustomShaders();
