@@ -279,7 +279,6 @@ void LoadPostShaderInfo(Draw::DrawContext *draw, const std::vector<Path> &direct
 // Scans the directories for shader ini files and collects info about all the shaders found.
 void ReloadAllPostShaderInfo(Draw::DrawContext *draw) {
 	std::vector<Path> directories;
-	directories.push_back(Path("shaders"));  // For VFS
 	directories.push_back(GetSysDirectory(DIRECTORY_CUSTOM_SHADERS));
 
 	// User-configurable extra shader directory (set via CustomShaderPath in ppsspp.ini).
