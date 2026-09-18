@@ -41,7 +41,6 @@ jobs:
             yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
             "$SDKMGR" --install 'platforms;android-36' 'build-tools;36.0.0' 'cmake;3.22.1' || true
           fi
-          echo "ANDROID_SDK=$SDK" >> $GITHUB_ENV
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -61,36 +60,14 @@ jobs:
       - name: Assemble NormalDebug APK (arm64-v8a)
         run: |
           chmod +x gradlew
-          ./gradlew assembleNormalDebug -Pandroid.injected.build.abi=arm64-v8a -PANDROID_VERSION_CODE=1 -PANDROID_VERSION_NAME=1.0.0 --stacktrace
+          ./gradlew clean assembleNormalDebug -Pandroid.injected.build.abi=arm64-v8a -PANDROID_VERSION_CODE=1 -PANDROID_VERSION_NAME=1.0.0 --stacktrace
 
-      - name: Zipalign and re-sign APK
+      - name: Collect APK
+        if: always()
         run: |
-          SDK="${ANDROID_SDK:-$ANDROID_HOME}"
-          BT=$(ls -d "$SDK"/build-tools/36.0.0 2>/dev/null | head -1)
-          if [ -z "$BT" ]; then
-            BT=$(ls -d "$SDK"/build-tools/* 2>/dev/null | sort -V | tail -1)
-          fi
-          echo "build-tools=$BT"
-          ZIPALIGN="$BT/zipalign"
-          APKSIGNER="$BT/apksigner"
           mkdir -p out
-          for apk in $(find android/build -name '*.apk' -type f); do
-            base=$(basename "$apk")
-            echo "Processing $base"
-            "$ZIPALIGN" -P 16 -f -v 4 "$apk" "out/aligned-$base" || "$ZIPALIGN" -p -f -v 4 "$apk" "out/aligned-$base"
-            "$APKSIGNER" sign \
-              --ks android/debug.keystore \
-              --ks-pass pass:android \
-              --key-pass pass:android \
-              --ks-key-alias androiddebugkey \
-              --v1-signing-enabled true \
-              --v2-signing-enabled true \
-              --v3-signing-enabled true \
-              --out "out/$base" "out/aligned-$base"
-            "$APKSIGNER" verify --verbose "out/$base" || true
-            rm -f "out/aligned-$base"
-          done
-          ls -la out/
+          find android/build -name '*.apk' -type f -exec cp -v {} out/ \; 2>/dev/null || true
+          ls -la out || true
 
       - name: Upload APK
         if: always()
