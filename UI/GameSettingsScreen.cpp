@@ -415,6 +415,19 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 		});
 	}
 
+	// Custom postprocessing filter folder (.ini + .fsh pairs). Stored as CustomShaderPath
+	// in ppsspp.ini. On change, rescan and drop any shaders that no longer resolve.
+	PopupTextInputChoice *customShaderPath = graphicsSettings->Add(new PopupTextInputChoice(GetRequesterToken(), &g_Config.sCustomShaderPath, gr->T("Custom shader folder"), "", 255, screenManager()));
+	customShaderPath->OnChange.Add([this](UI::EventParams &e) {
+		ReloadAllPostShaderInfo(screenManager()->getDrawContext());
+		RemoveUnknownPostShaders(&g_Config.vPostShaderNames);
+		FixPostShaderOrder(&g_Config.vPostShaderNames);
+		g_Config.bShaderChainRequires60FPS = PostShaderChainRequires60FPS(GetFullPostShadersChain(g_Config.vPostShaderNames));
+		System_PostUIMessage(UIMessage::GPU_CONFIG_CHANGED);
+		System_PostUIMessage(UIMessage::POSTSHADER_UPDATED);
+		RecreateViews();
+	});
+
 	// If only one mode is supported (like FIFO on iOS), no need to show the options.
 	if (CountSetBits((u32)draw->GetDeviceCaps().presentModesSupported) > 1) {
 		// Immediate means non-synchronized, tearing.
@@ -584,25 +597,10 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 	CheckBox *smartFiltering = graphicsSettings->Add(new CheckBox(&g_Config.bSmart2DTexFiltering, gr->T("Smart 2D texture filtering")));
 	smartFiltering->SetDisabledPtr(&g_Config.bSoftwareRendering);
 
-#if PPSSPP_PLATFORM(ANDROID) || PPSSPP_PLATFORM(IOS)
-	bool showCardboardSettings = deviceType != DEVICE_TYPE_VR;
-#else
-	// If you enabled it through the ini, you can see this. Useful for testing.
-	bool showCardboardSettings = config.bEnableCardboardVR;
-#endif
-	if (showCardboardSettings) {
-		graphicsSettings->Add(new ItemHeader(gr->T("Cardboard VR Settings", "Cardboard VR Settings")));
-		graphicsSettings->Add(new CheckBox(&config.bEnableCardboardVR, gr->T("Enable Cardboard VR", "Enable Cardboard VR")));
-		PopupSliderChoice *cardboardScreenSize = graphicsSettings->Add(new PopupSliderChoice(&config.iCardboardScreenSize, 30, 150, 50, gr->T("Cardboard Screen Size", "Screen Size (in % of the viewport)"), 1, screenManager(), gr->T("% of viewport")));
-		cardboardScreenSize->SetEnabledPtr(&config.bEnableCardboardVR);
-		PopupSliderChoice *cardboardXShift = graphicsSettings->Add(new PopupSliderChoice(&config.iCardboardXShift, -150, 150, 0, gr->T("Cardboard Screen X Shift", "X Shift (in % of the void)"), 1, screenManager(), gr->T("% of the void")));
-		cardboardXShift->SetEnabledPtr(&config.bEnableCardboardVR);
-		PopupSliderChoice *cardboardYShift = graphicsSettings->Add(new PopupSliderChoice(&config.iCardboardYShift, -100, 100, 0, gr->T("Cardboard Screen Y Shift", "Y Shift (in % of the void)"), 1, screenManager(), gr->T("% of the void")));
-		cardboardYShift->SetEnabledPtr(&config.bEnableCardboardVR);
-	}
-
 	graphicsSettings->Add(new ItemHeader(gr->T("Overlay Information")));
 	graphicsSettings->Add(new BitCheckBox(&g_Config.iShowStatusFlags, (int)ShowStatusFlags::FPS_COUNTER, gr->T("Show FPS Counter")));
+	static const char *fpsPositions[] = { "Top Right", "Top Left", "Top Center" };
+	graphicsSettings->Add(new PopupMultiChoice(&g_Config.iFpsPosition, gr->T("FPS Position"), fpsPositions, 0, ARRAY_SIZE(fpsPositions), I18NCat::GRAPHICS, screenManager()));
 	graphicsSettings->Add(new BitCheckBox(&g_Config.iShowStatusFlags, (int)ShowStatusFlags::SPEED_COUNTER, gr->T("Show Speed")));
 	if (System_GetPropertyBool(SYSPROP_CAN_READ_BATTERY_PERCENTAGE)) {
 		graphicsSettings->Add(new BitCheckBox(&g_Config.iShowStatusFlags, (int)ShowStatusFlags::BATTERY_PERCENT, gr->T("Show Battery %")));
