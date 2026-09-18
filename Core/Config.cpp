@@ -678,6 +678,7 @@ static const ConfigSetting gestureControlSettings[] = {
 
 static const ConfigSetting graphicsSettings[] = {
 	ConfigSetting("iShowStatusFlags", SETTING(g_Config, iShowStatusFlags), 0, CfgFlag::PER_GAME),
+	ConfigSetting("iFpsPosition", SETTING(g_Config, iFpsPosition), 0, CfgFlag::PER_GAME),
 	ConfigSetting("GraphicsBackend", SETTING(g_Config, iGPUBackend), &DefaultGPUBackend, &GPUBackendTranslator::To, &GPUBackendTranslator::From, CfgFlag::DEFAULT | CfgFlag::REPORT),
 #if PPSSPP_PLATFORM(ANDROID) && PPSSPP_ARCH(ARM64)
 	ConfigSetting("CustomDriver", SETTING(g_Config, sCustomDriver), "", CfgFlag::DEFAULT),

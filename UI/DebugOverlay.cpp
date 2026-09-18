@@ -520,8 +520,22 @@ void DrawFPS(UIContext *ctx, const Bounds &bounds) {
 
 	ctx->BindFontTexture();
 	ctx->Draw()->SetFontScale(0.7f, 0.7f);
-	ctx->Draw()->DrawText(ubuntu24, w.as_view(), bounds.x2() - offset, bounds.y + 12, 0xc0000000, ALIGN_TOPRIGHT | FLAG_DYNAMIC_ASCII);
-	ctx->Draw()->DrawText(ubuntu24, w.as_view(), bounds.x2() - offset - 2, bounds.y + 10, 0xFF3fFF3f, ALIGN_TOPRIGHT | FLAG_DYNAMIC_ASCII);
+	float tx = bounds.x2() - offset;
+	float ty = bounds.y + 12;
+	int align = ALIGN_TOPRIGHT | FLAG_DYNAMIC_ASCII;
+	float tx2 = bounds.x2() - offset - 2;
+	float ty2 = bounds.y + 10;
+	if (g_Config.iFpsPosition == 1) {
+		tx = bounds.x + offset; ty = bounds.y + 12;
+		align = ALIGN_TOPLEFT | FLAG_DYNAMIC_ASCII;
+		tx2 = bounds.x + offset + 2; ty2 = bounds.y + 10;
+	} else if (g_Config.iFpsPosition == 2) {
+		tx = bounds.centerX(); ty = bounds.y + 12;
+		align = ALIGN_TOP | ALIGN_HCENTER | FLAG_DYNAMIC_ASCII;
+		tx2 = bounds.centerX(); ty2 = bounds.y + 10;
+	}
+	ctx->Draw()->DrawText(ubuntu24, w.as_view(), tx, ty, 0xc0000000, align);
+	ctx->Draw()->DrawText(ubuntu24, w.as_view(), tx2, ty2, 0xFF3fFF3f, align);
 	ctx->Draw()->SetFontScale(1.0f, 1.0f);
 	ctx->Flush();
 	ctx->RebindTexture();
