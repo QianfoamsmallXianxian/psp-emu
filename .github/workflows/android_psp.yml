@@ -11,9 +11,9 @@ on:
 
 jobs:
   build:
-    name: Android arm64-v8a
+    name: Android NormalDebug arm64-v8a
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
 
     steps:
       - name: Checkout
@@ -25,34 +25,47 @@ jobs:
       - name: Fetch tags
         run: |
           git fetch --deepen=15000 --no-recurse-submodules --tags || true
-          git describe --tags --always || true
 
-      - name: Setup Android NDK
-        uses: nttld/setup-ndk@v1
-        id: setup-ndk
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
         with:
-          ndk-version: r29
+          distribution: temurin
+          java-version: '17'
 
-      - name: Build APK (arm64-v8a)
-        env:
-          NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate debug.keystore
         run: |
-          cd android
-          chmod +x ab.sh
-          ./ab.sh -j2 APP_ABI=arm64-v8a
+          if [ ! -f android/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore android/debug.keystore \
+              -storepass android -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname 'CN=Android Debug,O=Android,C=US'
+          fi
+
+      - name: Assemble NormalDebug APK (arm64-v8a)
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleNormalDebug -Pandroid.injected.build.abi=arm64-v8a -PANDROID_VERSION_CODE=1 -PANDROID_VERSION_NAME=1.0.0 --stacktrace
 
       - name: Collect APK
         if: always()
         run: |
           mkdir -p out
-          find android -name '*.apk' -type f -exec cp -v {} out/ \; 2>/dev/null || true
+          find android/build -name '*.apk' -type f -exec cp -v {} out/ \; 2>/dev/null || true
           ls -la out || true
 
       - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: psp-android-arm64-v8a
+          name: psp-normaldebug-arm64-v8a
           path: out/*.apk
           if-no-files-found: warn
           retention-days: 14
