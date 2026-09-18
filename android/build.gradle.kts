@@ -161,7 +161,7 @@ android {
 		}
 	}
 	packaging {
-		jniLibs.useLegacyPackaging = false
+		jniLibs.useLegacyPackaging = true
 	}
 	sourceSets {
 		getByName("main") {
