@@ -437,6 +437,7 @@ public:
 	// UI
 	bool bShowDebuggerOnLoad;
 	int iShowStatusFlags;
+	int iFpsPosition;  // 0=top-right, 1=top-left, 2=top-center
 	bool bShowRegionOnGameIcon;
 	bool bShowIDOnGameIcon;
 	float fGameGridScale;

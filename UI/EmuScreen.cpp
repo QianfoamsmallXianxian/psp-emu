@@ -1251,14 +1251,6 @@ void EmuScreen::CreateViews() {
 	});
 	backButton_->SetVisibility(V_GONE);
 
-	cardboardDisableButton_ = root_->Add(new Button(sc->T("Cardboard VR OFF"), new AnchorLayoutParams(bounds.centerX(), NONE, NONE, 30, Centering::Both)));
-	DeviceOrientation orientation = GetDeviceOrientation();
-	cardboardDisableButton_->OnClick.Add([deviceOrientation](UI::EventParams &) {
-		DisplayLayoutConfig &config = g_Config.GetDisplayLayoutConfig(deviceOrientation);
-		config.bEnableCardboardVR = false;
-	});
-	cardboardDisableButton_->SetVisibility(V_GONE);
-	cardboardDisableButton_->SetScale(0.65f);  // make it smaller - this button can be in the way otherwise.
 
 	chatButton_ = nullptr;
 	chatMenu_ = nullptr;
@@ -1663,7 +1655,6 @@ ScreenRenderFlags EmuScreen::render(ScreenRenderMode mode) {
 			// This is used on the exception bluescreen for example.
 			draw->Clear(Draw::Aspect::COLOR_BIT, clearColor_, 0.0f, 0);
 		}
-		cardboardDisableButton_->SetVisibility(displayLayoutConfig.bEnableCardboardVR ? UI::V_VISIBLE : UI::V_GONE);
 		renderUI();
 	}
 
@@ -1813,7 +1804,7 @@ bool EmuScreen::hasVisibleUI() {
 	if (!g_OSD.IsEmpty() || g_Config.bShowTouchControls || g_Config.iShowStatusFlags != 0)
 		return true;
 	DisplayLayoutConfig &config = g_Config.GetDisplayLayoutConfig(GetDeviceOrientation());
-	if (config.bEnableCardboardVR || g_Config.bEnableNetworkChat)
+	if (g_Config.bEnableNetworkChat)
 		return true;
 	if (g_Config.bShowGPOLEDs)
 		return true;

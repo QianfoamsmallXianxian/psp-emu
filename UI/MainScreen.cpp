@@ -234,18 +234,24 @@ public:
 		UI::AnchorLayout::Draw(dc);
 
 		const AtlasImage *iconImg = dc.Draw()->GetAtlas()->getImage(GetIconID());
-		const AtlasImage *logoImg = dc.Draw()->GetAtlas()->getImage(ImageID("I_LOGO"));
 		if (!iconImg) {
 			return;
 		}
 
 		dc.Draw()->DrawImage(GetIconID(), bounds_.x, bounds_.y, 1.0f);
 
-		if (bounds_.w < iconImg->w + logoImg->w + 36) {
-			return;
-		}
+		// Two-line text block to the right of the icon, centered against it.
+		const float textX = bounds_.x + iconImg->w + 8.0f;
+		const float iconH = (float)iconImg->h;
+		const float pspTop = bounds_.y + iconH * 0.05f;
+		const float verTop = bounds_.y + iconH * 0.55f;
 
-		dc.Draw()->DrawImage(ImageID("I_LOGO"), bounds_.x + iconImg->w + 8, bounds_.y + 4, 1.0f);
+		{
+			const FontStyle *pspStyle = GetTextStyle(dc, TextSize::Big);
+			dc.SetFontStyle(*pspStyle);
+			dc.DrawText("PSP", textX, pspTop, dc.GetTheme().infoStyle.fgColor);
+			dc.SetFontStyle(dc.GetTheme().uiFont);
+		}
 
 		std::string versionString = PPSSPP_GIT_VERSION;
 		// Strip the 'v' from the displayed version, and shorten the commit hash.
@@ -254,7 +260,6 @@ public:
 				versionString = versionString.substr(1);
 			}
 			if (CountChar(versionString, '-') == 2) {
-				// Shorten the commit hash.
 				size_t cutPos = versionString.find_last_of('-') + 8;
 				versionString = versionString.substr(0, std::min(cutPos, versionString.size()));
 			}
@@ -265,10 +270,7 @@ public:
 
 		const FontStyle *style = GetTextStyle(dc, tiny ? TextSize::Tiny : TextSize::Small);
 		dc.SetFontStyle(*style);
-		dc.DrawText(versionString,
-			bounds_.x + iconImg->w + 8,
-			bounds_.y + logoImg->h + (tiny ? 8 : 6),
-			dc.GetTheme().infoStyle.fgColor);
+		dc.DrawText(versionString, textX, verTop, dc.GetTheme().infoStyle.fgColor);
 		dc.SetFontStyle(dc.GetTheme().uiFont);
 	}
 
@@ -308,21 +310,8 @@ void MainScreen::CreateMainButtons(UI::ViewGroup *parent, bool portrait) {
 		parent->Add(portrait ? new Choice(ImageID("I_FOLDER_OPEN"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Load", "Load...")))->OnClick.Handle(this, &MainScreen::OnLoadFile);
 	}
 	parent->Add(portrait ? new Choice(ImageID("I_GEAR"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Game Settings", "Settings")))->OnClick.Handle(this, &MainScreen::OnGameSettings);
-	parent->Add(portrait ? new Choice(ImageID("I_INFO"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("About PPSSPP")))->OnClick.Handle(this, &MainScreen::OnCredits);
 
-	if (!portrait) {
-		parent->Add(new Choice(mm->T("www.ppsspp.org")))->OnClick.Handle(this, &MainScreen::OnPPSSPPOrg);
-	}
 
-	if (!System_GetPropertyBool(SYSPROP_APP_GOLD) && (System_GetPropertyInt(SYSPROP_DEVICE_TYPE) != DEVICE_TYPE_VR)) {
-		Choice *gold = parent->Add(portrait ? new Choice(ImageID("I_ICON_GOLD"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Buy PPSSPP Gold")));
-		gold->OnClick.Add([this](UI::EventParams &) {
-			LaunchBuyGold(this->screenManager());
-		});
-		gold->SetIconRight(ImageID("I_ICON_GOLD"), 0.5f);
-		gold->SetImageScale(0.6f);  // for the left-icon in case of vertical.
-		gold->SetShine(true);
-	}
 
 	if (!portrait) {
 		parent->Add(new Spacer(16.0));
