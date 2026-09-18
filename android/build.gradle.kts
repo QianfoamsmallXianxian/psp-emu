@@ -52,10 +52,10 @@ val gitVersionName = if (commitsSinceTag == 0) gitTag else buildString {
 }
 
 val gitVersionCode =
-	major * 100_000_000 +
+	(major * 100_000_000 +
 		minor * 1000_000 +
 		patch * 10_000 +
-		commitsSinceTag
+		commitsSinceTag).coerceAtLeast(1)
 
 dependencies {
 	// 1.6.1 is the newest version we can use that won't complain about minSdk version,
