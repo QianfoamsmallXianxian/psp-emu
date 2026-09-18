@@ -1,0 +1,58 @@
+name: Android PSP
+
+on:
+  push:
+    branches:
+      - psp
+  pull_request:
+    branches:
+      - psp
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Android arm64-v8a
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch tags
+        run: |
+          git fetch --deepen=15000 --no-recurse-submodules --tags || true
+          git describe --tags --always || true
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r29
+
+      - name: Build APK (arm64-v8a)
+        env:
+          NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          cd android
+          chmod +x ab.sh
+          ./ab.sh -j2 APP_ABI=arm64-v8a
+
+      - name: Collect APK
+        if: always()
+        run: |
+          mkdir -p out
+          find android -name '*.apk' -type f -exec cp -v {} out/ \; 2>/dev/null || true
+          ls -la out || true
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: psp-android-arm64-v8a
+          path: out/*.apk
+          if-no-files-found: warn
+          retention-days: 14
