@@ -4,8 +4,6 @@ on:
   push:
     branches:
     - master
-    # For testing.
-    - actions
     tags:
       - "v*.*"
     paths-ignore:
@@ -21,105 +19,67 @@ on:
     - 'Tools/**'
     - '.{editorconfig,gitattributes,gitignore}'
     - 'appveyor.yml'
+  workflow_dispatch:
+    inputs:
+      buildVariant:
+        type: choice
+        description: 'Build Variant'
+        required: true
+        default: 'NormalDebug'
+        options:
+        - NormalOptimized
+        - NormalDebug
+        - VROptimized
+        - VRDebug
+        - LegacyOptimized
 
 env:
   BUILD_CONFIGURATION: Release
 
 jobs:
-  build:
-    name: build (${{ matrix.id }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - os: ubuntu-26.04
-          extra: android
-          cc: clang
-          cxx: clang++
-          args: cd android && ./ab.sh APP_ABI=arm64-v8a UNITTEST=1 HEADLESS=1
-          id: android-arm64
-    runs-on: ${{ matrix.os }}
+  android:
+    name: Android APK (${{ github.event.inputs.buildVariant || 'NormalDebug' }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+
     steps:
     - uses: actions/checkout@v7
       with:
+        fetch-depth: 0
         submodules: recursive
 
-    - name: Fetch tags for macOS releases
-      if: runner.os == 'macOS'
-      # This is required for git describe --always to work for git-version.cpp.
+    - name: Check Valid Version Tags
+      id: valid-tags
+      shell: bash
       run: |
-        git fetch --deepen=15000 --no-recurse-submodules --tags || exit 0
+        echo "count=$(git tag -l 'v[0-9]*' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
 
-    - name: Setup Android NDK
-      uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779 # v1.6.0
-      if: matrix.extra == 'android'
-      id: setup-ndk
+    - name: Fetch upstream tags
+      # Required so git describe returns a valid version instead of crashing on a fresh fork.
+      if: steps.valid-tags.outputs.count == '0'
+      run: |
+        git remote add upstream https://github.com/hrydgard/ppsspp.git
+        git fetch --deepen=15000 --no-recurse-submodules --tags --force upstream || exit 0
+
+    - name: Setup JDK
+      uses: actions/setup-java@v6.0.0
       with:
-        ndk-version: r29
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
 
-    - name: Install Linux dependencies
-      if: runner.os == 'Linux' && matrix.extra != 'android' && matrix.extra != 'loongarch64'
+    - name: Assemble APK
+      run: ./gradlew assemble${{ github.event.inputs.buildVariant || 'NormalDebug' }} --stacktrace
+
+    - name: Package APK
       run: |
-        sudo apt-get update -y -qq
-        sudo apt-get install libsdl3-dev libgl1-mesa-dev libglu1-mesa-dev libsdl3-ttf-dev libfontconfig1-dev libcurl4-openssl-dev
+        find android/build -name '*.apk' -type f
+        mkdir -p ppsspp
+        find android/build -name '*.apk' -type f -exec cp -v {} ppsspp/ \;
 
-    - name: Install macOS SDL3 dependencies
-      if: runner.os == 'macOS' && matrix.id == 'macos'
-      run: brew install sdl3 sdl3_ttf
-
-    - name: Install loongarch64 cross-compilation dependencies
-      if: matrix.extra == 'loongarch64'
-      run: |
-        sudo apt-get update -y -qq
-        sudo apt-get install -y gcc-14-loongarch64-linux-gnu g++-14-loongarch64-linux-gnu binutils-loongarch64-linux-gnu libgl-dev libglu1-mesa-dev
-        sudo cmake/scripts/setup-loongarch64-cross.sh
-
-    - name: Install iOS dependencies
-      if: matrix.id == 'ios'
-      run: |
-        brew install ldid dpkg pillow
-        # Check Xcode version
-        xcodebuild -version
-
-    - name: Create iOS Version.txt file
-      if: matrix.id == 'ios'
-      run: |
-        # Create Version.txt file (should probably do this during building process)
-        mkdir -p build-ios/PPSSPP.app
-        GIT_VERSION=$(git describe --always --tags)
-        echo ${GIT_VERSION#v} > build-ios/PPSSPP.app/Version.txt
-
-    - name: Create macOS & iOS git-version.cpp for tagged release
-      if: github.ref_type == 'tag' && (matrix.id == 'macos' || matrix.id == 'ios')
-      run: |
-        echo "const char *PPSSPP_GIT_VERSION = \"${GITHUB_REF_NAME}\";" > git-version.cpp
-        echo "#define PPSSPP_GIT_VERSION_NO_UPDATE 1" >> git-version.cpp
-
-    - name: Setup ccache
-      uses: hendrikmuhs/ccache-action@d62db5f07c26379fc4b4e0916f098a92573c3b03 # v1.2.23
-      # Disable ccache on macos for now, it's become buggy for some reason.
-      if: matrix.id != 'macos'
+    - name: Upload APK
+      uses: actions/upload-artifact@v7
       with:
-        key: ${{ matrix.id }}
-
-    - name: Execute build
-      env:
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
-        NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
-        NDK_CCACHE: ccache
-        USE_CCACHE: 1
-      run: |
-        export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
-        export CCACHE_SLOPPINESS=clang_index_store,ivfsoverlay,include_file_ctime,include_file_mtime,modules,system_headers,time_macros
-        if [ "${{ matrix.extra }}" == "android" ]; then
-          export CCACHE_FILECLONE=true
-          export CCACHE_DEPEND=true
-          export CCACHE_COMPILERCHECK=content
-        elif [ "$RUNNER_OS" == "macOS" ]; then
-          export CCACHE_SLOPPINESS=pch_defines,$CCACHE_SLOPPINESS
-          export CCACHE_FILECLONE=true
-          export CCACHE_DEPEND=true
-          export CCACHE_COMPILERCHECK=content
-        fi
-        ${{ matrix.args }}
+        name: android-${{ github.event.inputs.buildVariant || 'NormalDebug' }} apk
+        path: ppsspp/
+        if-no-files-found: error
