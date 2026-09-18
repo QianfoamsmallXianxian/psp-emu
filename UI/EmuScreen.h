@@ -130,7 +130,6 @@ private:
 	UI::Clickable *chatButton_ = nullptr;
 	ChatMenu *chatMenu_ = nullptr;
 
-	UI::Button *cardboardDisableButton_ = nullptr;
 
 	std::string extraAssertInfoStr_;
 

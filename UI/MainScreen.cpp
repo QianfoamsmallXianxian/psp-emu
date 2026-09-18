@@ -304,30 +304,24 @@ void MainScreen::CreateMainButtons(UI::ViewGroup *parent, bool portrait) {
 	if (portrait) {
 		parent->Add(new Spacer(1.0f, new LinearLayoutParams(1.0f)));
 	}
+	if (!portrait) {
+		parent->Add(new ItemHeader(mm->T("MenuGames", "GAMES")));
+	}
 	if (System_GetPropertyBool(SYSPROP_HAS_FILE_BROWSER)) {
 		parent->Add(portrait ? new Choice(ImageID("I_FOLDER_OPEN"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Load", "Load...")))->OnClick.Handle(this, &MainScreen::OnLoadFile);
 	}
+	if (!portrait) { parent->Add(new ItemHeader(mm->T("MenuSettings", "SETTINGS"))); }
 	parent->Add(portrait ? new Choice(ImageID("I_GEAR"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Game Settings", "Settings")))->OnClick.Handle(this, &MainScreen::OnGameSettings);
-	parent->Add(portrait ? new Choice(ImageID("I_INFO"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("About PPSSPP")))->OnClick.Handle(this, &MainScreen::OnCredits);
 
-	if (!portrait) {
-		parent->Add(new Choice(mm->T("www.ppsspp.org")))->OnClick.Handle(this, &MainScreen::OnPPSSPPOrg);
-	}
 
-	if (!System_GetPropertyBool(SYSPROP_APP_GOLD) && (System_GetPropertyInt(SYSPROP_DEVICE_TYPE) != DEVICE_TYPE_VR)) {
-		Choice *gold = parent->Add(portrait ? new Choice(ImageID("I_ICON_GOLD"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Buy PPSSPP Gold")));
-		gold->OnClick.Add([this](UI::EventParams &) {
-			LaunchBuyGold(this->screenManager());
-		});
-		gold->SetIconRight(ImageID("I_ICON_GOLD"), 0.5f);
-		gold->SetImageScale(0.6f);  // for the left-icon in case of vertical.
-		gold->SetShine(true);
-	}
 
 	if (!portrait) {
 		parent->Add(new Spacer(16.0));
 	}
 
+	if (!portrait) {
+		parent->Add(new ItemHeader(mm->T("MenuOther", "OTHER")));
+	}
 	// Remove the exit button in vertical layout on all platforms, just no space.
 	bool showExitButton = !portrait;
 	// Also, always hide the exit button on mobile platforms that are not supposed to have one.

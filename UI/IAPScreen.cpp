@@ -1,4 +1,4 @@
-// NOTE: This currently only used on iOS, to present the availablility of getting PPSSPP Gold through IAP.
+// NOTE: This currently only used on iOS, to present the availablility of getting PSP Gold through IAP.
 
 #include "Common/System/System.h"
 #include "Common/System/Request.h"
@@ -11,7 +11,7 @@
 
 std::string_view IAPScreen::GetTitle() const {
 	auto mm = GetI18NCategory(I18NCat::MAINMENU);
-	return mm->T("Buy PPSSPP Gold");
+	return mm->T("Buy PSP Gold");
 }
 
 void IAPScreen::CreateContentViews(UI::ViewGroup *parent) {
@@ -24,16 +24,16 @@ void IAPScreen::CreateContentViews(UI::ViewGroup *parent) {
 
 	ViewGroup *appTitle = new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT));
 	appTitle->Add(new ShinyIcon(ImageID("I_ICON_GOLD"), new LinearLayoutParams(64, 64)));
-	appTitle->Add(new TextView("PPSSPP Gold", new LinearLayoutParams(1.0f, Gravity::G_VCENTER)));
+	appTitle->Add(new TextView("PSP Gold", new LinearLayoutParams(1.0f, Gravity::G_VCENTER)));
 
 	leftColumnItems->Add(appTitle);
 	if (!bought) {
 		leftColumnItems->Add(new Spacer(30.0f));
-		leftColumnItems->Add(new TextView(di->T("GoldOverview1", "Buy PPSSPP Gold to support development!")))->SetAlign(FLAG_WRAP_TEXT);
+		leftColumnItems->Add(new TextView(di->T("GoldOverview1", "Buy PSP Gold to support development!")))->SetAlign(FLAG_WRAP_TEXT);
 		leftColumnItems->Add(new Spacer(10.0f));
 		leftColumnItems->Add(new TextView(di->T("GoldOverview2", "It helps sustain development!")))->SetAlign(FLAG_WRAP_TEXT);
 	} else {
-		leftColumnItems->Add(new TextView(di->T("GoldThankYou", "Thank you for supporting the PPSSPP project!")))->SetAlign(FLAG_WRAP_TEXT);
+		leftColumnItems->Add(new TextView(di->T("GoldThankYou", "Thank you for supporting the PSP project!")))->SetAlign(FLAG_WRAP_TEXT);
 	}
 
 	leftColumnItems->Add(new Spacer(30.0f));
@@ -55,7 +55,7 @@ void IAPScreen::CreateSettingsViews(UI::ViewGroup *rightColumnItems) {
 #elif PPSSPP_PLATFORM(IOS)
 		image = ImageID("I_LOGO_APP_STORE");
 #endif
-		Choice *buyButton = rightColumnItems->Add(new Choice(mm->T("Buy PPSSPP Gold"), image));
+		Choice *buyButton = rightColumnItems->Add(new Choice(mm->T("Buy PSP Gold"), image));
 		buyButton->SetIconRight(ImageID("I_ICON_GOLD"), 0.5f);
 		buyButton->SetShine(true);
 		const int requesterToken = GetRequesterToken();
@@ -63,9 +63,9 @@ void IAPScreen::CreateSettingsViews(UI::ViewGroup *rightColumnItems) {
 			INFO_LOG(Log::System, "Showing purchase UI...");
 			if (useIAP_) {
 				System_IAPMakePurchase(requesterToken, "org.ppsspp.gold", [this](std::string_view responseString, int intValue) {
-					INFO_LOG(Log::System, "PPSSPP Gold purchase successful!");
+					INFO_LOG(Log::System, "PSP Gold purchase successful!");
 					auto di = GetI18NCategory(I18NCat::DIALOG);
-					g_OSD.Show(OSDType::MESSAGE_SUCCESS, di->T("GoldThankYou", "Thank you for supporting the PPSSPP project!"), 3.0f);
+					g_OSD.Show(OSDType::MESSAGE_SUCCESS, di->T("GoldThankYou", "Thank you for supporting the PSP project!"), 3.0f);
 					RecreateViews();
 				}, [](int responseValue) {
 					WARN_LOG(Log::System, "Purchase failed or cancelled!");
