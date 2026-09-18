@@ -50,17 +50,6 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleNormalDebug -Pandroid.injected.build.abi=arm64-v8a -PANDROID_VERSION_CODE=1 -PANDROID_VERSION_NAME=1.0.0 --stacktrace
 
-      - name: Resign APK with v2 and v3
-        run: |
-          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          BT=$(find "$SDK/build-tools" -maxdepth 1 -type d -name '3*' | sort -V | tail -1)
-          echo "build-tools=$BT"
-          APKSIGNER="$BT/apksigner"
-          APK=$(find android/build -name '*.apk' -type f | head -1)
-          echo "apk=$APK"
-          "$APKSIGNER" sign --ks android/debug.keystore --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true "$APK"
-          "$APKSIGNER" verify --verbose "$APK" || true
-
       - name: Collect APK
         if: always()
         run: |
