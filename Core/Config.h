@@ -397,6 +397,7 @@ public:
 
 	bool bShaderChainRequires60FPS;
 	std::string sTextureShaderName;
+	std::string sCustomShaderPath;
 	bool bGfxDebugOutput;
 	int iInflightFrames;
 	bool bRenderDuplicateFrames;
