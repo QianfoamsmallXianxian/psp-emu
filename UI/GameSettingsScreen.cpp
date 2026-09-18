@@ -586,7 +586,7 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 
 	graphicsSettings->Add(new ItemHeader(gr->T("Overlay Information")));
 	graphicsSettings->Add(new BitCheckBox(&g_Config.iShowStatusFlags, (int)ShowStatusFlags::FPS_COUNTER, gr->T("Show FPS Counter")));
-	static const char *fpsPositions[] = { gr->T("Top Right"), gr->T("Top Left"), gr->T("Top Center") };
+	static const char *fpsPositions[] = { "Top Right", "Top Left", "Top Center" };
 	graphicsSettings->Add(new PopupMultiChoice(&g_Config.iFpsPosition, gr->T("FPS Position"), fpsPositions, 0, ARRAY_SIZE(fpsPositions), I18NCat::GRAPHICS, screenManager()));
 	graphicsSettings->Add(new BitCheckBox(&g_Config.iShowStatusFlags, (int)ShowStatusFlags::SPEED_COUNTER, gr->T("Show Speed")));
 	if (System_GetPropertyBool(SYSPROP_CAN_READ_BATTERY_PERCENTAGE)) {
