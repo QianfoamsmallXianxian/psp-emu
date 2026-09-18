@@ -530,9 +530,9 @@ void DrawFPS(UIContext *ctx, const Bounds &bounds) {
 		align = ALIGN_TOPLEFT | FLAG_DYNAMIC_ASCII;
 		tx2 = bounds.x + offset + 2; ty2 = bounds.y + 10;
 	} else if (g_Config.iFpsPosition == 2) {
-		tx = bounds.centerX(); ty = bounds.y + 12;
+		tx = (bounds.x + bounds.x2()) * 0.5f; ty = bounds.y + 12;
 		align = ALIGN_TOP | ALIGN_HCENTER | FLAG_DYNAMIC_ASCII;
-		tx2 = bounds.centerX(); ty2 = bounds.y + 10;
+		tx2 = (bounds.x + bounds.x2()) * 0.5f; ty2 = bounds.y + 10;
 	}
 	ctx->Draw()->DrawText(ubuntu24, w.as_view(), tx, ty, 0xc0000000, align);
 	ctx->Draw()->DrawText(ubuntu24, w.as_view(), tx2, ty2, 0xFF3fFF3f, align);
