@@ -433,10 +433,16 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 		refreshCustomShaders();
 	});
 	Choice *customShaderBrowse = customShaderRow->Add(new Choice(gr->T("Browse"), new LinearLayoutParams(0.0f)));
-	customShaderBrowse->OnClick.Add([refreshCustomShaders, gr](UI::EventParams &e) {
-		System_BrowseForFolder(GetRequesterToken(), gr->T("Custom filter folder"), Path(g_Config.sCustomShaderPath), [refreshCustomShaders](std::string_view value, int) {
+	customShaderBrowse->OnClick.Add([this, gr](UI::EventParams &e) {
+		System_BrowseForFolder(GetRequesterToken(), gr->T("Custom filter folder"), Path(g_Config.sCustomShaderPath), [this](std::string_view value, int) {
 			g_Config.sCustomShaderPath = std::string(value);
-			refreshCustomShaders();
+			ReloadAllPostShaderInfo(screenManager()->getDrawContext());
+			RemoveUnknownPostShaders(&g_Config.vPostShaderNames);
+			FixPostShaderOrder(&g_Config.vPostShaderNames);
+			g_Config.bShaderChainRequires60FPS = PostShaderChainRequires60FPS(GetFullPostShadersChain(g_Config.vPostShaderNames));
+			System_PostUIMessage(UIMessage::GPU_CONFIG_CHANGED);
+			System_PostUIMessage(UIMessage::POSTSHADER_UPDATED);
+			RecreateViews();
 		});
 	});
 
