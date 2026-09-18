@@ -35,32 +35,31 @@ jobs:
       - name: Install Android SDK components
         run: |
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          echo "SDK=$SDK"
           SDKMGR=$(find "$SDK" -name sdkmanager -type f 2>/dev/null | head -1)
           echo "sdkmanager=$SDKMGR"
           if [ -n "$SDKMGR" ]; then
             yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
-            "$SDKMGR" --install "platforms;android-35" "build-tools;35.0.0" "cmake;3.22.1" "ndk;29.0.14206865" || true
+            "$SDKMGR" --install 'platforms;android-36' 'build-tools;36.0.0' 'cmake;3.22.1' || true
           fi
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Generate debug.keystore
-        run: |
-          if [ ! -f android/debug.keystore ]; then
-            keytool -genkeypair -v \
-              -keystore android/debug.keystore \
-              -storepass android -keypass android \
-              -alias androiddebugkey \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname 'CN=Android Debug,O=Android,C=US'
-          fi
-
       - name: Assemble NormalDebug APK (arm64-v8a)
         run: |
           chmod +x gradlew
           ./gradlew assembleNormalDebug -Pandroid.injected.build.abi=arm64-v8a -PANDROID_VERSION_CODE=1 -PANDROID_VERSION_NAME=1.0.0 --stacktrace
+
+      - name: Resign APK with v2 and v3
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          BT=$(find "$SDK/build-tools" -maxdepth 1 -type d -name '3*' | sort -V | tail -1)
+          echo "build-tools=$BT"
+          APKSIGNER="$BT/apksigner"
+          APK=$(find android/build -name '*.apk' -type f | head -1)
+          echo "apk=$APK"
+          "$APKSIGNER" sign --ks android/debug.keystore --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true "$APK"
+          "$APKSIGNER" verify --verbose "$APK" || true
 
       - name: Collect APK
         if: always()
