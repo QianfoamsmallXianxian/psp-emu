@@ -21,6 +21,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <deque>
 
 #include "Common/UI/UIScreen.h"
 #include "Common/UI/PopupScreens.h"
@@ -114,6 +115,19 @@ public:
 protected:
 	void CreateGestureTab(UI::LinearLayout *parent, int zoneIndex, bool portrait);
 };
+class PostShaderListScreen : public UI::PopupScreen {
+public:
+	PostShaderListScreen(std::string_view title) : PopupScreen(title, "OK", "Cancel") {}
+	void CreatePopupContents(UI::ViewGroup *parent) override;
+	const char *tag() const override { return "PostShaderListScreen"; }
+
+private:
+	void OnCompleted(DialogResult result) override;
+	std::deque<bool> enabled_;
+	std::vector<std::string> sections_;
+	std::vector<std::string> names_;
+};
+
 
 class RestoreSettingsScreen : public UI::PopupScreen {
 public:

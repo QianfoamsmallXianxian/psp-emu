@@ -440,6 +440,11 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 		});
 	});
 
+
+	Choice *customShaderList = graphicsSettings->Add(new Choice(gr->T("Show filter list")));
+	customShaderList->OnClick.Add([this, gr](UI::EventParams &e) {
+		screenManager()->push(new PostShaderListScreen(gr->T("Show filter list")));
+	});
 	// If only one mode is supported (like FIFO on iOS), no need to show the options.
 	if (CountSetBits((u32)draw->GetDeviceCaps().presentModesSupported) > 1) {
 		// Immediate means non-synchronized, tearing.
@@ -1904,3 +1909,39 @@ void RestoreSettingsScreen::OnCompleted(DialogResult result) {
 		g_Config.RestoreDefaults((RestoreSettingsBits)restoreFlags_);
 	}
 }
+
+void PostShaderListScreen::CreatePopupContents(UI::ViewGroup *parent) {
+	using namespace UI;
+	auto ps = GetI18NCategory(I18NCat::POSTSHADERS);
+	ReloadAllPostShaderInfo(screenManager()->getDrawContext());
+
+	const auto &all = GetAllPostShaderInfo();
+	for (const auto &info : all) {
+		if (!info.visible || info.isStereo)
+			continue;
+		bool on = std::find(g_Config.vPostShaderNames.begin(), g_Config.vPostShaderNames.end(), info.section) != g_Config.vPostShaderNames.end();
+		enabled_.push_back(on);
+		sections_.push_back(info.section);
+		names_.push_back(info.name);
+	}
+
+	for (size_t i = 0; i < sections_.size(); ++i) {
+		parent->Add(new CheckBox(&enabled_[i], ps->T(sections_[i].c_str(), names_[i].c_str()), "", new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
+	}
+}
+
+void PostShaderListScreen::OnCompleted(DialogResult result) {
+	if (result != DR_OK)
+		return;
+	std::vector<std::string> selected;
+	for (size_t i = 0; i < sections_.size(); ++i) {
+		if (enabled_[i])
+			selected.push_back(sections_[i]);
+	}
+	g_Config.vPostShaderNames = selected;
+	FixPostShaderOrder(&g_Config.vPostShaderNames);
+	g_Config.bShaderChainRequires60FPS = PostShaderChainRequires60FPS(GetFullPostShadersChain(g_Config.vPostShaderNames));
+	System_PostUIMessage(UIMessage::GPU_CONFIG_CHANGED);
+	System_PostUIMessage(UIMessage::POSTSHADER_UPDATED);
+}
+
