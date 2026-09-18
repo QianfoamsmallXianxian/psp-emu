@@ -30,6 +30,7 @@
 #include "Common/GPU/thin3d.h"
 #include "Common/StringUtils.h"
 
+#include "Core/Config.h"
 #include "Core/System.h"
 #include "GPU/Common/PostShader.h"
 
@@ -280,6 +281,26 @@ void ReloadAllPostShaderInfo(Draw::DrawContext *draw) {
 	std::vector<Path> directories;
 	directories.push_back(Path("shaders"));  // For VFS
 	directories.push_back(GetSysDirectory(DIRECTORY_CUSTOM_SHADERS));
+
+	// User-configurable extra shader directory (set via CustomShaderPath in ppsspp.ini).
+	// Lets users keep .ini/.fsh filter pairs anywhere on external storage.
+	std::string extraPath = g_Config.sCustomShaderPath;
+	// Trim whitespace.
+	size_t begin = extraPath.find_first_not_of(" \t\r\n");
+	if (begin == std::string::npos) {
+		extraPath.clear();
+	} else {
+		size_t end = extraPath.find_last_not_of(" \t\r\n");
+		extraPath = extraPath.substr(begin, end - begin + 1);
+	}
+	// Strip trailing slashes (a trailing '/' can break directory enumeration on some backends).
+	while (extraPath.size() > 1 && extraPath.back() == '/') {
+		extraPath.pop_back();
+	}
+	if (!extraPath.empty() && extraPath != "/") {
+		directories.push_back(Path(extraPath));
+	}
+
 	LoadPostShaderInfo(draw, directories);
 }
 

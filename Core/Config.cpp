@@ -750,6 +750,7 @@ static const ConfigSetting graphicsSettings[] = {
 	// Not really a graphics setting...
 	ConfigSetting("SplineBezierQuality", SETTING(g_Config, iSplineBezierQuality), 2, CfgFlag::PER_GAME | CfgFlag::REPORT),
 	ConfigSetting("TextureShader", SETTING(g_Config, sTextureShaderName), "Off", CfgFlag::PER_GAME),
+	ConfigSetting("CustomShaderPath", SETTING(g_Config, sCustomShaderPath), "", CfgFlag::DEFAULT),
 	ConfigSetting("ShaderChainRequires60FPS", SETTING(g_Config, bShaderChainRequires60FPS), false, CfgFlag::PER_GAME),
 
 	ConfigSetting("SkipGPUReadbackMode", SETTING(g_Config, iSkipGPUReadbackMode), false, CfgFlag::PER_GAME | CfgFlag::REPORT),

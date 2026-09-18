@@ -234,18 +234,24 @@ public:
 		UI::AnchorLayout::Draw(dc);
 
 		const AtlasImage *iconImg = dc.Draw()->GetAtlas()->getImage(GetIconID());
-		const AtlasImage *logoImg = dc.Draw()->GetAtlas()->getImage(ImageID("I_LOGO"));
 		if (!iconImg) {
 			return;
 		}
 
 		dc.Draw()->DrawImage(GetIconID(), bounds_.x, bounds_.y, 1.0f);
 
-		if (bounds_.w < iconImg->w + logoImg->w + 36) {
-			return;
-		}
+		// Two-line text block to the right of the icon, centered against it.
+		const float textX = bounds_.x + iconImg->w + 8.0f;
+		const float iconH = (float)iconImg->h;
+		const float pspTop = bounds_.y + iconH * 0.05f;
+		const float verTop = bounds_.y + iconH * 0.55f;
 
-		{ const FontStyle *pspStyle = GetTextStyle(dc, TextSize::Big); dc.SetFontStyle(*pspStyle); dc.DrawText("PSP", bounds_.x + iconImg->w + 8, bounds_.y + logoImg->h - 6, dc.GetTheme().infoStyle.fgColor); dc.SetFontStyle(dc.GetTheme().uiFont); }
+		{
+			const FontStyle *pspStyle = GetTextStyle(dc, TextSize::Big);
+			dc.SetFontStyle(*pspStyle);
+			dc.DrawText("PSP", textX, pspTop, dc.GetTheme().infoStyle.fgColor);
+			dc.SetFontStyle(dc.GetTheme().uiFont);
+		}
 
 		std::string versionString = PPSSPP_GIT_VERSION;
 		// Strip the 'v' from the displayed version, and shorten the commit hash.
@@ -254,7 +260,6 @@ public:
 				versionString = versionString.substr(1);
 			}
 			if (CountChar(versionString, '-') == 2) {
-				// Shorten the commit hash.
 				size_t cutPos = versionString.find_last_of('-') + 8;
 				versionString = versionString.substr(0, std::min(cutPos, versionString.size()));
 			}
@@ -265,10 +270,7 @@ public:
 
 		const FontStyle *style = GetTextStyle(dc, tiny ? TextSize::Tiny : TextSize::Small);
 		dc.SetFontStyle(*style);
-		dc.DrawText(versionString,
-			bounds_.x + iconImg->w + 8,
-			bounds_.y + logoImg->h + (tiny ? 8 : 6),
-			dc.GetTheme().infoStyle.fgColor);
+		dc.DrawText(versionString, textX, verTop, dc.GetTheme().infoStyle.fgColor);
 		dc.SetFontStyle(dc.GetTheme().uiFont);
 	}
 
