@@ -417,7 +417,9 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 
 	// Custom postprocessing filter folder (.ini + .fsh pairs). Stored as CustomShaderPath
 	// in ppsspp.ini. On change, rescan and drop any shaders that no longer resolve.
-	PopupTextInputChoice *customShaderPath = graphicsSettings->Add(new PopupTextInputChoice(GetRequesterToken(), &g_Config.sCustomShaderPath, gr->T("Custom shader folder"), "", 255, screenManager()));
+	LinearLayout *customShaderRow = graphicsSettings->Add(new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
+	customShaderRow->SetSpacing(4.0f);
+	PopupTextInputChoice *customShaderPath = customShaderRow->Add(new PopupTextInputChoice(GetRequesterToken(), &g_Config.sCustomShaderPath, gr->T("Custom shader folder"), "", 255, screenManager(), new LinearLayoutParams(1.0f)));
 	customShaderPath->OnChange.Add([this](UI::EventParams &e) {
 		ReloadAllPostShaderInfo(screenManager()->getDrawContext());
 		RemoveUnknownPostShaders(&g_Config.vPostShaderNames);
@@ -426,6 +428,17 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 		System_PostUIMessage(UIMessage::GPU_CONFIG_CHANGED);
 		System_PostUIMessage(UIMessage::POSTSHADER_UPDATED);
 		RecreateViews();
+	});
+	Choice *customShaderBrowse = customShaderRow->Add(new Choice(gr->T("Browse"), new LinearLayoutParams(0.0f)));
+	customShaderBrowse->OnClick.Add([this](UI::EventParams &e) {
+		System_BrowseForFolder(GetRequesterToken(), gr->T("Custom shader folder"), Path(g_Config.sCustomShaderPath), [this](std::string_view value, int) {
+			g_Config.sCustomShaderPath = std::string(value);
+			ReloadAllPostShaderInfo(screenManager()->getDrawContext());
+			RemoveUnknownPostShaders(&g_Config.vPostShaderNames);
+			FixPostShaderOrder(&g_Config.vPostShaderNames);
+			System_PostUIMessage(UIMessage::POSTSHADER_UPDATED);
+			RecreateViews();
+		});
 	});
 
 	// If only one mode is supported (like FIFO on iOS), no need to show the options.
