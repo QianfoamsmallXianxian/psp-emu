@@ -245,7 +245,7 @@ public:
 			return;
 		}
 
-		dc.Draw()->DrawImage(ImageID("I_LOGO"), bounds_.x + iconImg->w + 8, bounds_.y + 4, 1.0f);
+		{ const FontStyle *pspStyle = GetTextStyle(dc, TextSize::Big); dc.SetFontStyle(*pspStyle); dc.DrawText("PSP", bounds_.x + iconImg->w + 8, bounds_.y + logoImg->h - 6, dc.GetTheme().infoStyle.fgColor); dc.SetFontStyle(dc.GetTheme().uiFont); }
 
 		std::string versionString = PPSSPP_GIT_VERSION;
 		// Strip the 'v' from the displayed version, and shorten the commit hash.
@@ -304,13 +304,9 @@ void MainScreen::CreateMainButtons(UI::ViewGroup *parent, bool portrait) {
 	if (portrait) {
 		parent->Add(new Spacer(1.0f, new LinearLayoutParams(1.0f)));
 	}
-	if (!portrait) {
-		parent->Add(new ItemHeader(mm->T("MenuGames", "GAMES")));
-	}
 	if (System_GetPropertyBool(SYSPROP_HAS_FILE_BROWSER)) {
 		parent->Add(portrait ? new Choice(ImageID("I_FOLDER_OPEN"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Load", "Load...")))->OnClick.Handle(this, &MainScreen::OnLoadFile);
 	}
-	if (!portrait) { parent->Add(new ItemHeader(mm->T("MenuSettings", "SETTINGS"))); }
 	parent->Add(portrait ? new Choice(ImageID("I_GEAR"), portrait ? new LinearLayoutParams() : nullptr) : new Choice(mm->T("Game Settings", "Settings")))->OnClick.Handle(this, &MainScreen::OnGameSettings);
 
 
@@ -319,9 +315,6 @@ void MainScreen::CreateMainButtons(UI::ViewGroup *parent, bool portrait) {
 		parent->Add(new Spacer(16.0));
 	}
 
-	if (!portrait) {
-		parent->Add(new ItemHeader(mm->T("MenuOther", "OTHER")));
-	}
 	// Remove the exit button in vertical layout on all platforms, just no space.
 	bool showExitButton = !portrait;
 	// Also, always hide the exit button on mobile platforms that are not supposed to have one.
