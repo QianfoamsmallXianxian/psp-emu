@@ -316,10 +316,12 @@ void LoadPostShaderInfo(Draw::DrawContext *draw, const std::vector<Path> &direct
 // Scans the directories for shader ini files and collects info about all the shaders found.
 void ReloadAllPostShaderInfo(Draw::DrawContext *draw) {
 	std::vector<Path> directories;
-	directories.push_back(GetSysDirectory(DIRECTORY_CUSTOM_SHADERS));
 
 	// User-configurable extra shader directory (set via CustomShaderPath in ppsspp.ini).
-	// Lets users keep .ini/.fsh filter pairs anywhere on external storage.
+	// If a custom path is set, ONLY that directory is scanned for shaders.
+	// If it is empty/unset, we fall back to the built-in assets/shaders plus the
+	// default custom shader folder, so deleting the custom path restores the
+	// APK's built-in filters.
 	std::string extraPath = g_Config.sCustomShaderPath;
 	// Trim whitespace.
 	size_t begin = extraPath.find_first_not_of(" \t\r\n");
@@ -333,19 +335,14 @@ void ReloadAllPostShaderInfo(Draw::DrawContext *draw) {
 	while (extraPath.size() > 1 && extraPath.back() == '/') {
 		extraPath.pop_back();
 	}
+
 	if (!extraPath.empty() && extraPath != "/") {
-		Path extra(extraPath);
-		// Avoid scanning the same directory twice if the user points the custom
-		// path at one of the built-in locations (or repeats a trailing slash variant).
-		bool duplicate = false;
-		for (const Path &dir : directories) {
-			if (dir == extra) {
-				duplicate = true;
-				break;
-			}
-		}
-		if (!duplicate)
-			directories.push_back(extra);
+		// Custom path set: only load the custom filter folder.
+		directories.push_back(Path(extraPath));
+	} else {
+		// No custom path: use the APK's built-in shaders and the default custom folder.
+		directories.push_back(Path("shaders"));
+		directories.push_back(GetSysDirectory(DIRECTORY_CUSTOM_SHADERS));
 	}
 
 	LoadPostShaderInfo(draw, directories);
