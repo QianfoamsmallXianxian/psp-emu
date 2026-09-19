@@ -280,6 +280,7 @@ public:
 	// GFX
 	int iGPUBackend;
 	std::string sCustomDriver;
+	std::string sCustomShaderPath;  // Extra directory scanned for custom post-shader .ini/.fsh files.
 	std::string sFailedGPUBackends;  // NOT stored in ppsspp.ini anymore!
 	std::string sDisabledGPUBackends;
 	// We have separate device parameters for each backend so it doesn't get erased if you switch backends.
@@ -397,7 +398,6 @@ public:
 
 	bool bShaderChainRequires60FPS;
 	std::string sTextureShaderName;
-	std::string sCustomShaderPath;
 	bool bGfxDebugOutput;
 	int iInflightFrames;
 	bool bRenderDuplicateFrames;
