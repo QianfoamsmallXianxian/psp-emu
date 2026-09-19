@@ -25,6 +25,7 @@
 #include "Common/Log.h"
 #include "Common/Data/Format/IniFile.h"
 #include "Common/File/DirListing.h"
+#include "Common/File/FileUtil.h"
 #include "Common/File/VFS/VFS.h"
 #include "Common/GPU/OpenGL/GLFeatures.h"
 #include "Common/GPU/thin3d.h"
@@ -243,6 +244,78 @@ void LoadPostShaderInfo(Draw::DrawContext *draw, const std::vector<Path> &direct
 				} else if (!section.name().empty()) {
 					WARN_LOG(Log::G3D, "Unrecognized shader type '%s' or invalid shader in section '%s'", shaderType.c_str(), section.name().c_str());
 				}
+			}
+		}
+	}
+
+
+	// ---- Auto-register bare .fsh files that have no .ini definition ----
+	// For each .fsh without a matching [section] already loaded, synthesize a
+	// ShaderInfo. Vertex shader: prefer a same-named .vsh, else fall back to
+	// fxaa.vsh. Generated definitions are persisted to autogen.ini so they
+	// survive restarts; if the write fails (read-only path etc) we simply keep
+	// the in-memory registration and move on.
+	for (size_t d = 0; d < directories.size(); d++) {
+		std::vector<File::FileInfo> fshFiles;
+		File::GetFilesInDir(directories[d], &fshFiles, "fsh:");
+		if (fshFiles.empty())
+			continue;
+
+		std::vector<File::FileInfo> vshFiles;
+		File::GetFilesInDir(directories[d], &vshFiles, "vsh:");
+
+		std::string generated;
+		for (size_t f = 0; f < fshFiles.size(); f++) {
+			if (fshFiles[f].isDirectory)
+				continue;
+			std::string base = fshFiles[f].fullName.GetFilename();
+			size_t dot = base.find_last_of('.');
+			std::string section = (dot != std::string::npos) ? base.substr(0, dot) : base;
+			if (section.empty() || section == "Off")
+				continue;
+
+			bool already = false;
+			for (size_t i = 0; i < shaderInfo.size(); i++) {
+				if (shaderInfo[i].section == section) { already = true; break; }
+			}
+			if (already)
+				continue;
+
+			// Pick a vertex shader: same-named .vsh first, else fxaa.vsh.
+			Path vshPath;
+			std::string wantVsh = section + ".vsh";
+			for (size_t v = 0; v < vshFiles.size(); v++) {
+				if (vshFiles[v].fullName.GetFilename() == wantVsh) {
+					vshPath = vshFiles[v].fullName;
+					break;
+				}
+			}
+			if (vshPath.empty()) {
+				vshPath = directories[d] / "fxaa.vsh";
+				if (!File::Exists(vshPath))
+					vshPath = Path("assets/shaders/fxaa.vsh");
+			}
+
+			ShaderInfo info{};
+			info.section = section;
+			info.name = section;
+			info.visible = true;
+			info.fragmentShaderFile = fshFiles[f].fullName;
+			info.vertexShaderFile = vshPath;
+			appendShader(info);
+
+			generated += "[" + section + "]\n";
+			generated += "Name=" + section + "\n";
+			generated += "Fragment=" + base + "\n";
+			generated += "Vertex=" + vshPath.GetFilename() + "\n\n";
+		}
+
+		if (!generated.empty()) {
+			Path autogen = directories[d] / "autogen.ini";
+			FILE *fp = File::OpenCFile(autogen, "wb");
+			if (fp) {
+				fwrite(generated.data(), 1, generated.size(), fp);
+				fclose(fp);
 			}
 		}
 	}
