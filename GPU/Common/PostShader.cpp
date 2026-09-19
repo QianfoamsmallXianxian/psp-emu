@@ -25,6 +25,7 @@
 #include "Common/Log.h"
 #include "Common/Data/Format/IniFile.h"
 #include "Common/File/DirListing.h"
+#include "Common/File/FileUtil.h"
 #include "Common/File/VFS/VFS.h"
 #include "Common/GPU/OpenGL/GLFeatures.h"
 #include "Common/GPU/thin3d.h"
@@ -248,9 +249,13 @@ void LoadPostShaderInfo(Draw::DrawContext *draw, const std::vector<Path> &direct
 	}
 
 	// Auto-register bare .fsh files that have no matching .ini section.
-	// Lets users drop a plain fragment shader into the custom shader folder and
+	// Lets users drop a plain fragment shader into a custom shader folder and
 	// have it show up in the filter list without hand-writing an .ini.
+	// Skipped for the built-in "shaders" VFS folder, whose contents are internal
+	// helpers described by defaultshaders.ini.
 	for (size_t d = 0; d < directories.size(); d++) {
+		if (directories[d] == Path("shaders"))
+			continue;
 		std::vector<File::FileInfo> fshFiles;
 		File::GetFilesInDir(directories[d], &fshFiles, "fsh:");
 		for (size_t f = 0; f < fshFiles.size(); f++) {
@@ -262,24 +267,28 @@ void LoadPostShaderInfo(Draw::DrawContext *draw, const std::vector<Path> &direct
 			std::string section = (dot != std::string::npos) ? base.substr(0, dot) : base;
 			if (section.empty())
 				continue;
-			// Skip if an .ini already defined this shader.
+			// Skip if an .ini or earlier .fsh already defined this shader (case-insensitive).
 			bool already = false;
 			for (size_t i = 0; i < shaderInfo.size(); i++) {
-				if (shaderInfo[i].section == section) {
+				if (shaderInfo[i].section.size() == section.size() &&
+					strncasecmp(shaderInfo[i].section.c_str(), section.c_str(), section.size()) == 0) {
 					already = true;
 					break;
 				}
 			}
 			if (already)
 				continue;
+			// Post shaders also need a vertex shader. Prefer a sibling .vsh with the
+			// same base name; otherwise fall back to fxaa.vsh in the same folder.
+			Path vshPath = Path(directories[d]) / (section + ".vsh");
+			if (!File::Exists(vshPath))
+				vshPath = Path(directories[d]) / "fxaa.vsh";
 			ShaderInfo info{};
 			info.section = section;
 			info.name = section;
 			info.visible = true;
 			info.fragmentShaderFile = fshPath;
-			// Post shaders need a vertex shader too; fxaa.vsh is the standard
-			// pass-through vertex shader used by most built-in filters.
-			info.vertexShaderFile = Path(directories[d]) / "fxaa.vsh";
+			info.vertexShaderFile = vshPath;
 			appendShader(info);
 		}
 	}
