@@ -682,7 +682,6 @@ static const ConfigSetting graphicsSettings[] = {
 	ConfigSetting("GraphicsBackend", SETTING(g_Config, iGPUBackend), &DefaultGPUBackend, &GPUBackendTranslator::To, &GPUBackendTranslator::From, CfgFlag::DEFAULT | CfgFlag::REPORT),
 #if PPSSPP_PLATFORM(ANDROID) && PPSSPP_ARCH(ARM64)
 	ConfigSetting("CustomDriver", SETTING(g_Config, sCustomDriver), "", CfgFlag::DEFAULT),
-	ConfigSetting("CustomShaderPath", SETTING(g_Config, sCustomShaderPath), "", CfgFlag::DEFAULT),
 #endif
 	ConfigSetting("DisabledGraphicsBackends", SETTING(g_Config, sDisabledGPUBackends), "", CfgFlag::DEFAULT),
 	ConfigSetting("VulkanDevice", SETTING(g_Config, sVulkanDevice), "", CfgFlag::DEFAULT),
