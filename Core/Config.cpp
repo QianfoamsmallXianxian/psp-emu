@@ -760,6 +760,7 @@ static const ConfigSetting graphicsSettings[] = {
 
 	ConfigSetting("InflightFrames", SETTING(g_Config, iInflightFrames), 2, CfgFlag::DEFAULT),
 	ConfigSetting("RenderDuplicateFrames", SETTING(g_Config, bRenderDuplicateFrames), false, CfgFlag::PER_GAME),
+    ConfigSetting("ForcedRenderHz", SETTING(g_Config, iForcedRenderHz), 0, CfgFlag::PER_GAME),
 
 	ConfigSetting("MultiThreading", SETTING(g_Config, bRenderMultiThreading), true, CfgFlag::DEFAULT),
 
