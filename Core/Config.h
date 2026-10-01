@@ -401,7 +401,7 @@ public:
 	bool bGfxDebugOutput;
 	int iInflightFrames;
 	bool bRenderDuplicateFrames;
-	int iForcedRenderHz = 120;
+	int iForcedRenderHz = 0;
 	bool bRenderMultiThreading;
 
 	// HW debug
