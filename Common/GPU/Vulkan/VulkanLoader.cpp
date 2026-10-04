@@ -444,7 +444,6 @@ void VulkanSetAvailable(bool available) {
 void VulkanSetNativeLibDir(std::string_view nativeLibDir) {
 	g_nativeLibDir = nativeLibDir;
 }
-bool VulkanMayBeAvailable_inner();
 
 
 bool VulkanMayBeAvailable_inner() {
