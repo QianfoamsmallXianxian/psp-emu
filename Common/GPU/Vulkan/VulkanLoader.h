@@ -283,6 +283,7 @@ struct VulkanExtensions {
 // Way to do a quick check before even attempting to load.
 void VulkanSetNativeLibDir(std::string_view nativeLibDir);
 bool VulkanMayBeAvailable();
+bool VulkanTestCustomDriver(const std::string &driverName);
 void VulkanSetAvailable(bool available);
 
 bool VulkanLoad(std::string *errorStr);

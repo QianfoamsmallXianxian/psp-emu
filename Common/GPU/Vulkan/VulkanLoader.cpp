@@ -676,6 +676,23 @@ bool VulkanMayBeAvailable() {
 	return r;
 }
 
+bool VulkanTestCustomDriver(const std::string &driverName) {
+	std::string savedDriver = g_Config.sCustomDriver;
+	bool savedChecked = g_vulkanAvailabilityChecked;
+	bool savedAvailable = g_vulkanMayBeAvailable;
+
+	g_Config.sCustomDriver = driverName;
+	g_vulkanAvailabilityChecked = false;
+	g_vulkanMayBeAvailable = false;
+
+	bool result = VulkanMayBeAvailable_inner();
+
+	g_Config.sCustomDriver = savedDriver;
+	g_vulkanAvailabilityChecked = savedChecked;
+	g_vulkanMayBeAvailable = savedAvailable;
+	return result;
+}
+
 
 
 

@@ -12,6 +12,7 @@
 #include "Core/Config.h"
 #include "Core/System.h"
 #include "Core/Util/PathUtil.h"
+#include "Common/GPU/Vulkan/VulkanLoader.h"
 
 #include "Common/UI/View.h"
 #include "UI/DriverManagerScreen.h"
@@ -192,6 +193,11 @@ void DriverManagerScreen::CreateDriverTab(UI::ViewGroup *drivers) {
 void DriverManagerScreen::OnCustomDriverChange(UI::EventParams &e) {
 	auto di = GetI18NCategory(I18NCat::DIALOG);
 	auto gr = GetI18NCategory(I18NCat::GRAPHICS);
+        if (!e.s.empty() && !VulkanTestCustomDriver(e.s)) {
+                g_OSD.Show(OSDType::MESSAGE_ERROR, "不兼容，请换默认驱动", 3.0f);
+                return;
+        }
+
 
 	screenManager()->push(new UI::MessagePopupScreen(gr->T("Drivers"), di->T("Changing this setting requires PPSSPP to restart."), di->T("Restart"), di->T("Cancel"), [=](bool yes) {
 		if (yes) {
