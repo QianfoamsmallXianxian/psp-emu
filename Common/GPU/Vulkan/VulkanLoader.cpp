@@ -444,8 +444,10 @@ void VulkanSetAvailable(bool available) {
 void VulkanSetNativeLibDir(std::string_view nativeLibDir) {
 	g_nativeLibDir = nativeLibDir;
 }
+bool VulkanMayBeAvailable_inner();
 
-bool VulkanMayBeAvailable() {
+
+bool VulkanMayBeAvailable_inner() {
 #if PPSSPP_PLATFORM(IOS)
 	g_vulkanAvailabilityChecked = true;
 	// MoltenVK does no longer seem to support iOS <= 12, despite what the docs say.
@@ -666,6 +668,16 @@ bail:
 	return g_vulkanMayBeAvailable;
 #endif
 }
+
+bool VulkanMayBeAvailable() {
+	bool r = VulkanMayBeAvailable_inner();
+	if (!r && !g_Config.sCustomDriver.empty()) {
+		g_Config.sCustomDriver.clear();
+		g_Config.Save("VulkanMayBeAvailable");
+	}
+	return r;
+}
+
 
 bool VulkanLoad(std::string *errorStr) {
 #if PPSSPP_PLATFORM(IOS_APP_STORE)
