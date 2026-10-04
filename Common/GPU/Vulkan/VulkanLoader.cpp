@@ -374,7 +374,7 @@ static VulkanLibraryHandle VulkanLoadLibrary(std::string *errorString) {
 		if (!meta.ok()) {
 			ERROR_LOG(Log::G3D, "Custom driver meta.json missing or corrupted");
 			g_Config.sCustomDriver.clear();
-			g_Config.Save();
+			g_Config.Save("VulkanLoader");
 		}
 		if (meta.ok()) {
 			auto libNameNode = meta.root().get("libraryName");
@@ -395,7 +395,7 @@ static VulkanLibraryHandle VulkanLoadLibrary(std::string *errorString) {
 				ERROR_LOG(Log::G3D, "Failed to load custom driver with AdrenoTools ('%s')", g_Config.sCustomDriver.c_str());
 				*errorString = "Failed to load custom driver";
 				g_Config.sCustomDriver.clear();
-				g_Config.Save();
+				g_Config.Save("VulkanLoader");
 			} else {
 				INFO_LOG(Log::G3D, "Vulkan library loaded with AdrenoTools ('%s')", g_Config.sCustomDriver.c_str());
 			}
