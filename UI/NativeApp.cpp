@@ -458,11 +458,6 @@ static void CheckFailedGPUBackends() {
 		g_Config.sFailedGPUBackends = data;
 	}
 
-	if (g_Config.iGPUBackend == (int)GPUBackend::VULKAN) {
-		g_Config.sFailedGPUBackends.clear();
-		File::Delete(failedBackendsFile);
-	}
-
 	// Use this if you want to debug a graphics crash...
 	if (g_Config.sFailedGPUBackends == "IGNORE")
 		return;
