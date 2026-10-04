@@ -520,6 +520,9 @@ int Config::NextValidBackend() {
 	}
 
 	if (failed.count((GPUBackend)iGPUBackend)) {
+		if (iGPUBackend == (int)GPUBackend::VULKAN && VulkanMayBeAvailable()) {
+			return iGPUBackend;
+		}
 		ERROR_LOG(Log::Config, "Graphics backend failed for %d, trying another", iGPUBackend);
 
 #if !PPSSPP_PLATFORM(UWP)
