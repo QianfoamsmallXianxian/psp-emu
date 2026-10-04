@@ -373,8 +373,6 @@ static VulkanLibraryHandle VulkanLoadLibrary(std::string *errorString) {
 		json::JsonReader meta = json::JsonReader((driverPath / "meta.json").c_str());
 		if (!meta.ok()) {
 			ERROR_LOG(Log::G3D, "Custom driver meta.json missing or corrupted");
-			g_Config.sCustomDriver.clear();
-			g_Config.Save("VulkanLoader");
 		}
 		if (meta.ok()) {
 			auto libNameNode = meta.root().get("libraryName");
@@ -394,8 +392,6 @@ static VulkanLibraryHandle VulkanLoadLibrary(std::string *errorString) {
 			if (!lib) {
 				ERROR_LOG(Log::G3D, "Failed to load custom driver with AdrenoTools ('%s')", g_Config.sCustomDriver.c_str());
 				*errorString = "Failed to load custom driver";
-				g_Config.sCustomDriver.clear();
-				g_Config.Save("VulkanLoader");
 			} else {
 				INFO_LOG(Log::G3D, "Vulkan library loaded with AdrenoTools ('%s')", g_Config.sCustomDriver.c_str());
 			}
@@ -671,10 +667,11 @@ bail:
 bool VulkanMayBeAvailable() {
 	bool r = VulkanMayBeAvailable_inner();
 	if (!r && !g_Config.sCustomDriver.empty()) {
+		std::string saved = g_Config.sCustomDriver;
 		g_Config.sCustomDriver.clear();
-		g_Config.Save("VulkanMayBeAvailable");
 		g_vulkanAvailabilityChecked = false;
 		r = VulkanMayBeAvailable_inner();
+		g_Config.sCustomDriver = saved;
 	}
 	return r;
 }

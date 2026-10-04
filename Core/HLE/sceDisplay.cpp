@@ -645,7 +645,7 @@ void __DisplayFlip(int cyclesLate) {
 	NotifyUserIfSlow();
 
 	bool forceNoFlip = false;
-float refreshRate = g_Config.iForcedRenderHz > 0 ? (float)g_Config.iForcedRenderHz : System_GetPropertyFloat(SYSPROP_DISPLAY_REFRESH_RATE);
+float refreshRate = System_GetPropertyFloat(SYSPROP_DISPLAY_REFRESH_RATE);
 	// Avoid skipping on devices that have 58 or 59 FPS, except when alternate speed is set.
 	const double fpsLimit = FrameTimingLimit();
 	bool throttle = fpsLimit != 0.0;

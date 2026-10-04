@@ -539,7 +539,6 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 
 	graphicsSettings->Add(new ItemHeader(gr->T("Performance")));
 	CheckBox *frameDuplication = graphicsSettings->Add(new CheckBox(&g_Config.bRenderDuplicateFrames, gr->T("Render duplicate frames to 60hz")));
-  graphicsSettings->Add(new PopupSliderChoice(&g_Config.iForcedRenderHz, 0, 144, 0, gr->T("强制渲染帧率"), 1, screenManager(), "")); // FHz
 	frameDuplication->SetEnabledFunc([] {
 		return !g_Config.bSkipBufferEffects && g_Config.iFrameSkip == 0;
 	});
