@@ -546,13 +546,6 @@ void DeveloperToolsScreen::CreateGraphicsTab(UI::LinearLayout *list) {
 		});
 	}
 
-	list->Add(new Choice(gr->T("Clear failed backends")))->OnClick.Add([](UI::EventParams &e) {
-		g_Config.sFailedGPUBackends.clear();
-		const Path dir = GetFailedBackendsDir();
-		const Path f = dir / "FailedGraphicsBackends.txt";
-		File::Delete(f);
-		g_OSD.Show(OSDType::MESSAGE_INFO, "Failed backends cleared", 2.0f);
-	});
 
 	static const char *depthRasterModes[] = { "Auto", "Low", "Off", "Always on" };
 
