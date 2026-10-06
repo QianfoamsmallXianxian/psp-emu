@@ -118,6 +118,7 @@ void TextureReplacer::NotifyConfigChanged() {
 		delete vfs_;
 		vfs_ = nullptr;
 		Decimate(ReplacerDecimateMode::ALL);
+		hasLoadedBasePath_ = false;
 	} else if (!wasReplaceEnabled && replaceEnabled_) {
 		std::string error;
 		replaceEnabled_ = LoadIni(&error);
@@ -139,6 +140,13 @@ void TextureReplacer::NotifyConfigChanged() {
 }
 
 bool TextureReplacer::LoadIni(std::string *error, bool notify) {
+	if (hasLoadedBasePath_ && vfs_
+	    && replaceEnabled_ == lastLoadedReplaceEnabled_
+	    && saveEnabled_ == lastLoadedSaveEnabled_
+	    && basePath_.ToString() == lastLoadedBasePathStr_) {
+		return true;
+	}
+
 	textureHash_ = ReplacedTextureHash::QUICK;
 	aliases_.clear();
 	hashranges_.clear();
@@ -242,6 +250,10 @@ bool TextureReplacer::LoadIni(std::string *error, bool notify) {
 	}
 
 	vfs_ = dir;
+	lastLoadedBasePathStr_ = basePath_.ToString();
+	lastLoadedReplaceEnabled_ = replaceEnabled_;
+	lastLoadedSaveEnabled_ = saveEnabled_;
+	hasLoadedBasePath_ = true;
 
 	// If we have stuff loaded from before, need to update the vfs pointers to avoid
 	// crash on exit. The actual problem is that we tend to call LoadIni a little too much...
@@ -677,7 +689,10 @@ ReplacedTexture *TextureReplacer::FindReplacement(ReplacementCacheKey replacemen
 
 	bool foundAlias = false;
 	bool ignored = false;
-	std::string hashfiles = LookupHashFile(replacementKey, &foundAlias, &ignored);
+	std::string hashfiles;
+	if (!aliases_.empty()) {
+	    hashfiles = LookupHashFile(replacementKey, &foundAlias, &ignored);
+	}
 
 	// Early-out for ignored textures, let's not bother even starting a thread task.
 	if (ignored) {
@@ -688,7 +703,9 @@ ReplacedTexture *TextureReplacer::FindReplacement(ReplacementCacheKey replacemen
 		return nullptr;
 	}
 
-	FindFiltering(replacementKey, &desc.forceFiltering);
+	if (!filtering_.empty()) {
+	    FindFiltering(replacementKey, &desc.forceFiltering);
+	}
 
 	if (foundAlias) {
 		desc.logId = hashfiles;
