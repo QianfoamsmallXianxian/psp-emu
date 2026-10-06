@@ -556,7 +556,7 @@ u32 TextureReplacer::ComputeHash(u32 addr, int bufw, int w, int h, bool swizzled
 	// TODO: Take swizzled into account, like in ComputeTextureHash().
 	// Note: Currently, only the MLB games are known to need this.
 
-	if (!LookupHashRange(addr, w, h, &w, &h)) {
+    if (hashranges_.empty() || !LookupHashRange(addr, w, h, &w, &h)) {
 		// There wasn't any hash range, let's fall back to maxSeenV logic.
 		if (h == 512 && maxSeenV < 512 && maxSeenV != 0) {
 			h = (int)maxSeenV;
