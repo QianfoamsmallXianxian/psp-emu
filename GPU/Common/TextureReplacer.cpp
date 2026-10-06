@@ -16,7 +16,6 @@
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
 #include "ppsspp_config.h"
-#include <string_view>
 
 #include <cstring>
 #include <memory>
@@ -119,7 +118,6 @@ void TextureReplacer::NotifyConfigChanged() {
 		delete vfs_;
 		vfs_ = nullptr;
 		Decimate(ReplacerDecimateMode::ALL);
-		hasLoadedBasePath_ = false;
 	} else if (!wasReplaceEnabled && replaceEnabled_) {
 		std::string error;
 		replaceEnabled_ = LoadIni(&error);
@@ -141,13 +139,6 @@ void TextureReplacer::NotifyConfigChanged() {
 }
 
 bool TextureReplacer::LoadIni(std::string *error, bool notify) {
-	if (hasLoadedBasePath_ && vfs_
-	    && replaceEnabled_ == lastLoadedReplaceEnabled_
-	    && saveEnabled_ == lastLoadedSaveEnabled_
-	    && basePath_.ToString() == lastLoadedBasePathStr_) {
-		return true;
-	}
-
 	textureHash_ = ReplacedTextureHash::QUICK;
 	aliases_.clear();
 	hashranges_.clear();
@@ -251,10 +242,6 @@ bool TextureReplacer::LoadIni(std::string *error, bool notify) {
 	}
 
 	vfs_ = dir;
-	lastLoadedBasePathStr_ = basePath_.ToString();
-	lastLoadedReplaceEnabled_ = replaceEnabled_;
-	lastLoadedSaveEnabled_ = saveEnabled_;
-	hasLoadedBasePath_ = true;
 
 	// If we have stuff loaded from before, need to update the vfs pointers to avoid
 	// crash on exit. The actual problem is that we tend to call LoadIni a little too much...
@@ -275,71 +262,32 @@ bool TextureReplacer::LoadIni(std::string *error, bool notify) {
 }
 
 static void ScanForHashNamedFiles(VFSBackend *dir, std::map<ReplacementCacheKey, std::map<int, std::string>> *filenameMap) {
-std::vector<File::FileInfo> filesInRoot;
-dir->GetFileListing("", &filesInRoot, nullptr);
+	// Scan the root of the texture folder/zip and preinitialize the hash map.
+	// TODO: Could put VFSFileReference into the map...
+	std::vector<File::FileInfo> filesInRoot;
+	dir->GetFileListing("", &filesInRoot, nullptr);
+	for (auto file : filesInRoot) {
+		if (file.isDirectory)
+			continue;
+		if (file.name.empty() || file.name[0] == '.')
+			continue;
+		Path path(file.name);
+		std::string ext = path.GetFileExtension();
 
-auto lower = [](char c) -> char {
- (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
-};
-auto hex_val = [](char c) -> int {
->= '0' && c <= '9') return c - '0';
->= 'a' && c <= 'f') return c - 'a' + 10;
->= 'A' && c <= 'F') return c - 'A' + 10;
- -1;
-};
-auto ext_is = [&](std::string_view e, const char *w, size_t wl) -> bool {
-!= wl) return false;
-i = 0; i < wl; ++i)
-!= w[i]) return false;
- true;
-};
-
-for (const auto &file : filesInRoot) {
-) continue;
-st std::string &name = file.name;
-st size_t nlen = name.size();
-len < 28 || name[0] == '.') continue;
-
-= nlen;
-i = nlen; i-- > 0; ) {
-ame[i] == '.') { dot = i; break; }
-== nlen) continue;
-
-st std::string_view ext(name.data() + dot, nlen - dot);
-".png", 4) || ext_is(ext, ".dds", 4) ||
-    ext_is(ext, ".zim", 4) || ext_is(ext, ".ktx2", 5)))
-tinue;
-
-st std::string_view hash(name.data(), dot);
-st size_t hlen = hash.size();
- == 24) || (hlen >= 26 && hlen <= 27 && hash[24] == '_')))
-tinue;
-
- = 0;
-= true;
-i = 0; i < 16; ++i) {
-st int v = hex_val(hash[i]);
-< 0) { ok = false; break; }
-= (cachekey << 4) | (u64)v;
-continue;
-
-= 0;
-i = 16; i < 24; ++i) {
-st int v = hex_val(hash[i]);
-< 0) { ok = false; break; }
-(hashval << 4) | (u32)v;
-continue;
-
-t level = 0;
- > 24) {
-i = 25; i < hlen; ++i) {
-st char c = hash[i];
-< '0' || c > '9') { ok = false; break; }
-level * 10 + (c - '0');
-continue;
-ameMap)[ReplacementCacheKey(cachekey, hashval)][level] = name;
-}
-}
+		std::string hash = file.name.substr(0, file.name.size() - ext.size());
+		if (!((hash.size() >= 26 && hash.size() <= 27 && hash[24] == '_') || hash.size() == 24)) {
+			continue;
+		}
+		// OK, it's hash-like enough to try to parse it into the map.
+		if (equalsNoCase(ext, ".ktx2") || equalsNoCase(ext, ".png") || equalsNoCase(ext, ".dds") || equalsNoCase(ext, ".zim")) {
+			ReplacementCacheKey key(0, 0);
+			int level = 0;  // sscanf might fail to pluck the level, but that's ok, we default to 0. sscanf doesn't write to non-matched outputs.
+			if (sscanf(hash.c_str(), "%16llx%8x_%d", &key.cachekey, &key.hash, &level) >= 1) {
+				// INFO_LOG(Log::TexReplacement, "hash-like file in root, adding: %s", file.name.c_str());
+				(*filenameMap)[key][level] = file.name;
+			}
+		}
+	}
 }
 
 static void ComputeAliasMap(std::unordered_map<ReplacementCacheKey, std::string> *aliases, const std::map<ReplacementCacheKey, std::map<int, std::string>> &filenameMap) {
@@ -608,7 +556,7 @@ u32 TextureReplacer::ComputeHash(u32 addr, int bufw, int w, int h, bool swizzled
 	// TODO: Take swizzled into account, like in ComputeTextureHash().
 	// Note: Currently, only the MLB games are known to need this.
 
-	if (hashranges_.empty() || !LookupHashRange(addr, w, h, &w, &h)) {
+	if (!LookupHashRange(addr, w, h, &w, &h)) {
 		// There wasn't any hash range, let's fall back to maxSeenV logic.
 		if (h == 512 && maxSeenV < 512 && maxSeenV != 0) {
 			h = (int)maxSeenV;
@@ -729,10 +677,7 @@ ReplacedTexture *TextureReplacer::FindReplacement(ReplacementCacheKey replacemen
 
 	bool foundAlias = false;
 	bool ignored = false;
-	std::string hashfiles;
-	if (!aliases_.empty()) {
-	    hashfiles = LookupHashFile(replacementKey, &foundAlias, &ignored);
-	}
+	std::string hashfiles = LookupHashFile(replacementKey, &foundAlias, &ignored);
 
 	// Early-out for ignored textures, let's not bother even starting a thread task.
 	if (ignored) {
@@ -743,9 +688,7 @@ ReplacedTexture *TextureReplacer::FindReplacement(ReplacementCacheKey replacemen
 		return nullptr;
 	}
 
-	if (!filtering_.empty()) {
-	    FindFiltering(replacementKey, &desc.forceFiltering);
-	}
+	FindFiltering(replacementKey, &desc.forceFiltering);
 
 	if (foundAlias) {
 		desc.logId = hashfiles;

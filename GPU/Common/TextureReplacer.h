@@ -144,10 +144,6 @@ protected:
 	ReplacedTextureHash textureHash_ = ReplacedTextureHash::QUICK;
 
 	VFSBackend *vfs_ = nullptr;
-	std::string lastLoadedBasePathStr_;
-	bool lastLoadedReplaceEnabled_ = false;
-	bool lastLoadedSaveEnabled_ = false;
-	bool hasLoadedBasePath_ = false;
 	bool vfsIsZip_ = false;
 
 	GPUFormatSupport formatSupport_{};
