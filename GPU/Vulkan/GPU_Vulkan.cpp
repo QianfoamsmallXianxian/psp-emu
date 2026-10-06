@@ -138,7 +138,7 @@ void GPU_Vulkan::LoadCache(const Path &filename) {
 	// This makes it so that the on-screen spinner keeps spinning until we are done.
 	double start = time_now_d();
 	VulkanRenderManager *rm = (VulkanRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
-	int maxTasksSeen = rm->WaitForPipelines();
+	int maxTasksSeen = rm->WaitForPipelines(2000);
 	double seconds = time_now_d() - start;
 	INFO_LOG(Log::G3D, "Waited %0.1fms for at least %d pipeline tasks to finish compiling.", seconds * 1000.0, maxTasksSeen);
 

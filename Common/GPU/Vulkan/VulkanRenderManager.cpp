@@ -283,16 +283,20 @@ public:
 	// Use during shutdown to make sure there aren't any leftover tasks sitting queued.
 	// Could probably be done more elegantly. Like waiting for all tasks of a type, or saving pointers to them, or something...
 	// Returns the maximum value of tasks in flight seen during the wait.
-	static int WaitForAll();
+	static int WaitForAll(int timeoutMs = 0);
 	static std::atomic<int> tasksInFlight_;
 };
 
-int CreateMultiPipelinesTask::WaitForAll() {
+int CreateMultiPipelinesTask::WaitForAll(int timeoutMs) {
 	int inFlight = 0;
 	int maxInFlight = 0;
+	double deadline = timeoutMs > 0 ? time_now_d() + (double)timeoutMs / 1000.0 : 0.0;
 	while ((inFlight = tasksInFlight_.load()) > 0) {
 		if (inFlight > maxInFlight) {
 			maxInFlight = inFlight;
+		}
+		if (timeoutMs > 0 && time_now_d() >= deadline) {
+			break;
 		}
 		sleep_ms(2, "create-multi-pipelines-wait");
 	}
@@ -903,8 +907,8 @@ void VulkanRenderManager::ReportBadStateForDraw() {
 	ERROR_LOG_REPORT_ONCE(baddraw, Log::G3D, "Can't draw: %s%s. Step count: %d", cause1, cause2, (int)steps_.size());
 }
 
-int VulkanRenderManager::WaitForPipelines() {
-	return CreateMultiPipelinesTask::WaitForAll();
+int VulkanRenderManager::WaitForPipelines(int timeoutMs) {
+	return CreateMultiPipelinesTask::WaitForAll(timeoutMs);
 }
 
 VKRGraphicsPipeline *VulkanRenderManager::CreateGraphicsPipeline(VKRGraphicsPipelineDesc *desc, PipelineFlags pipelineFlags, uint32_t variantBitmask, VkSampleCountFlagBits sampleCount, bool cacheLoad, const char *tag) {

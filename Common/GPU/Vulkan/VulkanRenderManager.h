@@ -285,7 +285,7 @@ public:
 
 	void ReportBadStateForDraw();
 
-	int WaitForPipelines();
+	int WaitForPipelines(int timeoutMs = 0);
 
 	void NudgeCompilerThread() {
 		compileQueueMutex_.lock();
