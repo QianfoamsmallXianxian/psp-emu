@@ -294,15 +294,15 @@ protected:
 	struct DeferredInds {
 		const void *inds;
 		u32 vertexCount;
-		u8 vertDecodeIndex;  // index into the drawVerts_ array to look up the vertexOffset.
+		u16 vertDecodeIndex;  // index into the drawVerts_ array to look up the vertexOffset.
 		u8 indexType;
 		GEPrimitiveType prim;
 		bool clockwise;
 		u16 offset;
 	};
 
-	enum { MAX_DEFERRED_DRAW_VERTS = 128 };  // If you change this to more than 256, change type of DeferredInds::vertDecodeIndex.
-	enum { MAX_DEFERRED_DRAW_INDS = 512 };  // Monster Hunter spams indexed calls that we end up merging.
+	enum { MAX_DEFERRED_DRAW_VERTS = 512 };  // If you change this to more than 256, change type of DeferredInds::vertDecodeIndex.
+	enum { MAX_DEFERRED_DRAW_INDS = 2048 };  // Monster Hunter spams indexed calls that we end up merging.
 	DeferredVerts drawVerts_[MAX_DEFERRED_DRAW_VERTS];
 	uint32_t drawVertexOffsets_[MAX_DEFERRED_DRAW_VERTS];
 	DeferredInds drawInds_[MAX_DEFERRED_DRAW_INDS];
