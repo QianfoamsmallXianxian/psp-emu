@@ -86,10 +86,10 @@ class ListPopupScreen : public PopupScreen {
 public:
 	ListPopupScreen(std::string_view title) : PopupScreen(title) {}
 	ListPopupScreen(std::string_view title, const std::vector<std::string> &items, int selected, std::function<void(int)> callback, bool showButtons = false)
-		: PopupScreen(title, "OK", "Cancel"), adaptor_(items, selected), callback_(callback), showButtons_(showButtons) {
+		: PopupScreen(title, T(I18NCat::DIALOG, "OK"), T(I18NCat::DIALOG, "Cancel")), adaptor_(items, selected), callback_(callback), showButtons_(showButtons) {
 	}
 	ListPopupScreen(std::string_view title, const std::vector<std::string> &items, int selected, bool showButtons = false)
-		: PopupScreen(title, "OK", "Cancel"), adaptor_(items, selected), showButtons_(showButtons) {
+		: PopupScreen(title, T(I18NCat::DIALOG, "OK"), T(I18NCat::DIALOG, "Cancel")), adaptor_(items, selected), showButtons_(showButtons) {
 	}
 	~ListPopupScreen() override;
 
